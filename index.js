@@ -13,7 +13,7 @@ bot.on("message", async (ctx) => {
   if (text === "/startlection") {
     bot.telegram.sendMessage(chatId, "Вы вошли в сессию.");
     fs.appendFile(
-      "../web/src/lectUsersId.txt",
+      "../web-materials/src/lectUsersId.txt",
       ctx.from.id + ",",
       function (err) {
         if (err) return console.log(err);
@@ -35,11 +35,11 @@ bot.on("message", async (ctx) => {
       ctx.from.username === "SadovoyDmitry")
   ) {
     await bot.telegram.sendMessage(chatId, "Вы завершили сессию для всех.");
-    fs.unlink("../web/src/lectUsersId.txt", (err) => {
+    fs.unlink("../web-materials/src/lectUsersId.txt", (err) => {
       if (err) throw err;
       console.log("all users clear");
     });
-    fs.appendFile("../web/src/lectUsersId.txt", "clear,", (err) => {
+    fs.appendFile("../web-materials/src/lectUsersId.txt", "clear,", (err) => {
       if (err) throw err;
       console.log("add new flow");
     });

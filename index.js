@@ -1,100 +1,119 @@
-const TelegramBot = require("node-telegram-bot-api");
+const { Telegraf } = require("telegraf");
+const fs = require("fs");
 
 const token = "5960420624:AAEvKvDBpDv5u3aSG2_3jcLULzkZq85aKkA";
-const webAppUrl = "https://coruscating-cactus-88b025.netlify.app/";
+// const webAppUrl = "https://coruscating-cactus-88b025.netlify.app/";
 
-const bot = new TelegramBot(token, { polling: true });
+const bot = new Telegraf(token);
 
-const usersId = new Set();
-
-bot.on("message", async (msg) => {
-  const text = msg.text;
-  const chatId = msg.chat.id;
+bot.on("message", async (ctx) => {
+  const text = ctx.message.text;
+  const chatId = ctx.from.id;
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
-    bot.sendMessage(chatId, "Вы вошли в сессию.");
-    usersId.add(msg.from.id);
-  }
-
-  // Завершаем лекцию, очищаем айдишники.
-  if (
-    text === "/stoplection" &&
-    (msg.from.username === "astrocowboiii" ||
-      msg.from.username === "s0dach" ||
-      msg.from.username === "SadovoyDmitry")
-  ) {
-    await bot.sendMessage(chatId, "Вы завершили сессию для всех.");
-    usersId.clear();
-  }
-  //   else {
-  //     await bot.sendMessage(chatId, "Нет доступа.");
-  //   }
-
-  // Панель админа
-  if (
-    text === "/startadmin" &&
-    (msg.from.username === "astrocowboiii" ||
-      msg.from.username === "s0dach" ||
-      msg.from.username === "SadovoyDmitry")
-  ) {
-    await bot.sendMessage(
-      chatId,
-      "Ниже появится кнопка для перехода в админ раздел.",
-      {
-        reply_markup: {
-          keyboard: [
-            [{ text: "Панель администратора", web_app: { url: webAppUrl } }],
-          ],
-        },
+    bot.telegram.sendMessage(chatId, "Вы вошли в сессию.");
+    fs.appendFile(
+      "../web/src/lectUsersId.txt",
+      ctx.from.id + ",",
+      function (err) {
+        if (err) return console.log(err);
+        console.log(
+          "add user id:",
+          ctx.from.id,
+          "username:",
+          ctx.from.username
+        );
       }
     );
   }
-  //   else {
-  //     await bot.sendMessage(chatId, "Нет доступа.");
-  //   }
 
-  if (msg.document) {
-    usersId.forEach((userId) => {
-      bot.sendDocument(userId, msg.document.file_id);
+  // // Завершаем лекцию, очищаем айдишники.
+  if (
+    text === "/stoplection" &&
+    (ctx.from.username === "astrocowboiii" ||
+      ctx.from.username === "s0dach" ||
+      ctx.from.username === "SadovoyDmitry")
+  ) {
+    await bot.telegram.sendMessage(chatId, "Вы завершили сессию для всех.");
+    fs.unlink("../web/src/lectUsersId.txt", (err) => {
+      if (err) throw err;
+      console.log("all users clear");
+    });
+    fs.appendFile("../web/src/lectUsersId.txt", "clear,", (err) => {
+      if (err) throw err;
+      console.log("add new flow");
     });
   }
+  // //   else {
+  // //     await bot.sendMessage(chatId, "Нет доступа.");
+  // //   }
 
-  if (msg.web_app_data.data) {
-    try {
-      const data = JSON.parse(msg.web_app_data.data);
-      const text = data.text;
-      console.log(text);
-      if (text) {
-        //Забираем ссылку с строки
-        const links = text.match(/https:\/\/[^\s\Z]+/i);
-        const first_link = links?.[0];
+  // // Панель админа
+  // if (
+  //   text === "/startadmin" &&
+  //   (ctx.from.username === "astrocowboiii" ||
+  //     ctx.from.username === "s0dach" ||
+  //     ctx.from.username === "SadovoyDmitry")
+  // ) {
+  //   await bot.sendMessage(
+  //     chatId,
+  //     "Ниже появится кнопка для перехода в админ раздел.",
+  //     {
+  //       reply_markup: {
+  //         keyboard: [
+  //           [{ text: "Панель администратора", web_app: { url: webAppUrl } }],
+  //         ],
+  //       },
+  //     }
+  //   );
+  // }
+  // //   else {
+  // //     await bot.sendMessage(chatId, "Нет доступа.");
+  // //   }
 
-        usersId.forEach((userId) => {
-          if (first_link !== undefined) {
-            // Обрезаем конечный текст с картинкой
+  // if (ctx.document) {
+  //   usersId.forEach((userId) => {
+  //     bot.sendDocument(userId, ctx.document.file_id);
+  //   });
+  // }
 
-            const firstFinishText = text.replace("<img src=" + first_link, "");
-            const lastFinishText = firstFinishText.replace(
-              ">" + first_link,
-              ""
-            );
-            const finishedText = lastFinishText.replace("<span><span>", "");
+  // if (ctx?.web_app_data?.data) {
+  //   try {
+  //     const data = JSON.parse(ctx?.web_app_data?.data);
+  //     const text = data.text;
+  //     console.log(text);
+  //     if (text) {
+  //       //Забираем ссылку с строки
+  // const links = text.match(/https:\/\/[^\s\Z]+/i);
+  //       const first_link = links?.[0];
 
-            bot.sendPhoto(userId, first_link, {
-              caption: finishedText,
-              parse_mode: "Markdown",
-            });
-          }
+  //       usersId.forEach((userId) => {
+  //         if (first_link !== undefined) {
+  //           // Обрезаем конечный текст с картинкой
 
-          if (first_link === undefined) {
-            bot.sendMessage(userId, text, {
-              parse_mode: "Markdown",
-            });
-          }
-        });
-      }
-    } catch (e) {
-      console.warn(e);
-    }
-  }
+  //           const firstFinishText = text.replace("<img src=" + first_link, "");
+  //           const lastFinishText = firstFinishText.replace(
+  //             ">" + first_link,
+  //             ""
+  //           );
+  //           const finishedText = lastFinishText.replace("<span><span>", "");
+
+  //           bot.sendPhoto(userId, first_link, {
+  //             caption: finishedText,
+  //             parse_mode: "Markdown",
+  //           });
+  //         }
+
+  //         if (first_link === undefined) {
+  //           bot.sendMessage(userId, text, {
+  //             parse_mode: "Markdown",
+  //           });
+  //         }
+  //       });
+  //     }
+  //   } catch (e) {
+  //     console.warn(e);
+  //   }
+  // }
 });
+bot.launch();

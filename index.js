@@ -4,7 +4,7 @@ const axios = require("axios");
 const token = "5960420624:AAEvKvDBpDv5u3aSG2_3jcLULzkZq85aKkA";
 
 let usersId = [];
-
+const uniqueIds = new Set();
 const bot = new Telegraf(token);
 
 bot.on("message", async (ctx) => {
@@ -14,6 +14,7 @@ bot.on("message", async (ctx) => {
   if (text === "/startlection") {
     bot.telegram.sendMessage(chatId, "Вы вошли в сессию.");
     usersId.push(chatId);
+    uniqueIds.add(chatId);
     // app.get("/api", (req, res) => {
     //   res.json({ usersId: usersId });
     // });
@@ -59,6 +60,7 @@ bot.on("message", async (ctx) => {
     bot.telegram.sendMessage(chatId, "Вы завершили сессию для всех.");
     usersId = [];
     axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
+    uniqueIds.clear();
 
     // fs.unlink("../web/src/lectUsersId.txt", function (err) {
     //   if (err) throw err;
@@ -70,11 +72,11 @@ bot.on("message", async (ctx) => {
     // });
   }
   // Работаем с документами
-  // if (ctx.document) {
-  //   usersId.forEach((userId) => {
-  //     bot.sendDocument(userId, ctx.document.file_id);
-  //   });
-  // }
+  if (ctx.message.document) {
+    uniqueIds.forEach((userId) => {
+      ctx.telegram.sendDocument(userId, ctx.message.document.file_id);
+    });
+  }
 });
 bot.launch();
 

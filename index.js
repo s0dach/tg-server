@@ -1,10 +1,14 @@
 const { Telegraf } = require("telegraf");
 const fs = require("fs");
+const express = require("express");
+const request = require("request");
+const axios = require("axios");
 
 const token = "5960420624:AAEvKvDBpDv5u3aSG2_3jcLULzkZq85aKkA";
 
+let usersId = [];
+
 const bot = new Telegraf(token);
-const message = "clear,";
 
 bot.on("message", async (ctx) => {
   const text = ctx.message.text;
@@ -12,21 +16,42 @@ bot.on("message", async (ctx) => {
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
     bot.telegram.sendMessage(chatId, "Вы вошли в сессию.");
-    fs.appendFile(
-      "../web-materials/src/lectUsersId.txt",
-      ctx.from.id + ",",
-      function (err) {
-        if (err) return console.log(err);
-        console.log(
-          "add user id:",
-          ctx.from.id,
-          "username:",
-          ctx.from.username
-        );
-      }
-    );
+    usersId.push(chatId);
+    // app.get("/api", (req, res) => {
+    //   res.json({ usersId: usersId });
+    // });
+    // app.get("http://95.163.234.208:3500/userid", function (request, response) {
+    //   res.json({ usersId: usersId });
+    // });
+    console.log(usersId);
+    // request.post(
+    //   {
+    //     headers: { "content-type": "application/x-www-form-urlencoded" },
+    //     url: "http://95.163.234.208:3500/userid",
+    //     body: usersId,
+    //   },
+    //   function (error, response, body) {
+    //     console.log(body);
+    //   }
+    // );
+    // axios.delete("http://95.163.234.208:3500/userId/" + 5).catch((e) => {
+    //   console.log(e);
+    // });
+    axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
+    // fs.appendFile(
+    //   "../web/src/lectUsersId.txt",
+    //   ctx.from.id + ",",
+    //   function (err) {
+    //     if (err) return console.log(err);
+    //     console.log(
+    //       "add user id:",
+    //       ctx.from.id,
+    //       "username:",
+    //       ctx.from.username
+    //     );
+    //   }
+    // );
   }
-
   // // Завершаем лекцию, очищаем айдишники.
   if (
     text === "/stoplection" &&
@@ -35,18 +60,17 @@ bot.on("message", async (ctx) => {
       ctx.from.username === "SadovoyDmitry")
   ) {
     bot.telegram.sendMessage(chatId, "Вы завершили сессию для всех.");
-    fs.unlink("../web-materials/src/lectUsersId.txt", function (err) {
-      if (err) throw err;
-      console.log("all users clear");
-    });
-    fs.appendFile(
-      "../web-materials/src/lectUsersId.txt",
-      message,
-      function (err) {
-        if (err) return console.log(err);
-        console.log("okay add clear");
-      }
-    );
+    usersId = [];
+    axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
+
+    // fs.unlink("../web/src/lectUsersId.txt", function (err) {
+    //   if (err) throw err;
+    //   console.log("all users clear");
+    // });
+    // fs.appendFile("../web/src/lectUsersId.txt", message, function (err) {
+    //   if (err) return console.log(err);
+    //   console.log("okay add clear");
+    // });
   }
   // Работаем с документами
   // if (ctx.document) {
@@ -74,7 +98,7 @@ bot.launch();
 //     {
 //       reply_markup: {
 //         keyboard: [
-//           [{ text: "Панель администратора", web-materials_app: { url: web-materialsAppUrl } }],
+//           [{ text: "Панель администратора", web_app: { url: webAppUrl } }],
 //         ],
 //       },
 //     }
@@ -90,9 +114,9 @@ bot.launch();
 //   });
 // }
 
-// if (ctx?.web-materials_app_data?.data) {
+// if (ctx?.web_app_data?.data) {
 //   try {
-//     const data = JSON.parse(ctx?.web-materials_app_data?.data);
+//     const data = JSON.parse(ctx?.web_app_data?.data);
 //     const text = data.text;
 //     console.log(text);
 //     if (text) {

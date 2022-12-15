@@ -1,7 +1,4 @@
 const { Telegraf } = require("telegraf");
-const fs = require("fs");
-const express = require("express");
-const request = require("request");
 const axios = require("axios");
 
 const token = "5960420624:AAEvKvDBpDv5u3aSG2_3jcLULzkZq85aKkA";

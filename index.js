@@ -12,13 +12,13 @@ bot.on("message", async (ctx) => {
   const text = ctx.message.text;
   const chatId = ctx.from.id;
 
-  await axios.get("http://95.163.234.208:3500/lists").then((res) => {
-    res.data.forEach((data) => {
-      lectionName.push(data.name);
-    });
-  });
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
+    await axios.get("http://95.163.234.208:3500/lists").then((res) => {
+      res.data.forEach((data) => {
+        lectionName.push(data.name);
+      });
+    });
     let inlineMessageRatingKeyboard = [];
     let uniqueNameLection = new Set(lectionName);
     uniqueNameLection.forEach((name) => {

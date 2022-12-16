@@ -4,40 +4,39 @@ const axios = require("axios");
 const token = "5960420624:AAEvKvDBpDv5u3aSG2_3jcLULzkZq85aKkA";
 
 let usersId = [];
+let lectionName = [];
 const uniqueIds = new Set();
 const bot = new Telegraf(token);
 
 bot.on("message", async (ctx) => {
   const text = ctx.message.text;
   const chatId = ctx.from.id;
+
+  await axios.get("http://95.163.234.208:3500/lists").then((res) => {
+    res.data.forEach((data) => {
+      lectionName.push(data.name);
+    });
+  });
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
-    bot.telegram.sendMessage(chatId, "Вы вошли в сессию.");
+    let inlineMessageRatingKeyboard = [];
+    let uniqueNameLection = new Set(lectionName);
+    uniqueNameLection.forEach((name) => {
+      inlineMessageRatingKeyboard.push([{ text: name, callback_data: "like" }]);
+      console.log([{ text: name, callback_data: "like" }]);
+    });
+    console.log(inlineMessageRatingKeyboard);
+    bot.telegram.sendMessage(chatId, "Вы вошли в сессию, выберите лекцию.", {
+      reply_markup: JSON.stringify({
+        inline_keyboard: inlineMessageRatingKeyboard,
+      }),
+    });
     await axios.get("http://95.163.234.208:3500/userId").then((res) => {
       usersId = res.data[0].usersId;
       usersId.push(chatId);
     });
     uniqueIds.add(chatId);
-    // app.get("/api", (req, res) => {
-    //   res.json({ usersId: usersId });
-    // });
-    // app.get("http://95.163.234.208:3500/userid", function (request, response) {
-    //   res.json({ usersId: usersId });
-    // });
-    console.log(usersId);
-    // request.post(
-    //   {
-    //     headers: { "content-type": "application/x-www-form-urlencoded" },
-    //     url: "http://95.163.234.208:3500/userid",
-    //     body: usersId,
-    //   },
-    //   function (error, response, body) {
-    //     console.log(body);
-    //   }
-    // );
-    // axios.delete("http://95.163.234.208:3500/userId/" + 5).catch((e) => {
-    //   console.log(e);
-    // });
+
     axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
     // fs.appendFile(
     //   "../web/src/lectUsersId.txt",

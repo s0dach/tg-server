@@ -13,7 +13,10 @@ bot.on("message", async (ctx) => {
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
     bot.telegram.sendMessage(chatId, "Вы вошли в сессию.");
-    usersId.push(chatId);
+    await axios.get("http://95.163.234.208:3500/userId").then((res) => {
+      usersId = res.data[0].usersId;
+      usersId.push(chatId);
+    });
     uniqueIds.add(chatId);
     // app.get("/api", (req, res) => {
     //   res.json({ usersId: usersId });

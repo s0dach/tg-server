@@ -41,7 +41,7 @@ bot.on("message", async (ctx) => {
   if (text === "/quit") {
     await axios.get("http://95.163.234.208:3500/userId/1").then((res) => {
       usersId = res.data.usersId.filter(
-        (value) => value.slice(0, -3) !== `${chatId}`
+        (value) => value.slice(0, -2) !== `${chatId}`
       );
     });
     await axios.patch("http://95.163.234.208:3500/userId/1", {

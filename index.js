@@ -21,38 +21,36 @@ bot.on("message", async (ctx) => {
     });
     let inlineMessageRatingKeyboard = [];
     let uniqueNameLection = new Set(lectionName);
+
+    let i = 1;
     uniqueNameLection.forEach((name) => {
-      inlineMessageRatingKeyboard.push([{ text: name, callback_data: "like" }]);
-      console.log([{ text: name, callback_data: "like" }]);
+      inlineMessageRatingKeyboard.push([
+        { text: name + ` [${i}]`, callback_data: i },
+      ]);
+      i++;
     });
-    console.log(inlineMessageRatingKeyboard);
+
     bot.telegram.sendMessage(chatId, "Вы вошли в сессию, выберите лекцию.", {
       reply_markup: JSON.stringify({
         inline_keyboard: inlineMessageRatingKeyboard,
       }),
     });
-    await axios.get("http://95.163.234.208:3500/userId").then((res) => {
-      usersId = res.data[0].usersId;
-      usersId.push(chatId);
-    });
-    uniqueIds.add(chatId);
-
-    axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
-    // fs.appendFile(
-    //   "../web/src/lectUsersId.txt",
-    //   ctx.from.id + ",",
-    //   function (err) {
-    //     if (err) return console.log(err);
-    //     console.log(
-    //       "add user id:",
-    //       ctx.from.id,
-    //       "username:",
-    //       ctx.from.username
-    //     );
-    //   }
-    // );
   }
-  // // Завершаем лекцию, очищаем айдишники.
+
+  // Выход с лекции
+  if (text === "/quit") {
+    await axios.get("http://95.163.234.208:3500/userId/1").then((res) => {
+      usersId = res.data.usersId.filter(
+        (value) => value.slice(0, -3) !== `${chatId}`
+      );
+    });
+    await axios.patch("http://95.163.234.208:3500/userId/1", {
+      usersId: usersId,
+    });
+    await bot.telegram.sendMessage(chatId, "Вы покинули лекцию");
+  }
+
+  // @deprecated Завершаем лекцию, очищаем айдишники.
   if (
     text === "/stoplection" &&
     (ctx.from.username === "astrocowboiii" ||
@@ -63,15 +61,6 @@ bot.on("message", async (ctx) => {
     usersId = [];
     axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
     uniqueIds.clear();
-
-    // fs.unlink("../web/src/lectUsersId.txt", function (err) {
-    //   if (err) throw err;
-    //   console.log("all users clear");
-    // });
-    // fs.appendFile("../web/src/lectUsersId.txt", message, function (err) {
-    //   if (err) return console.log(err);
-    //   console.log("okay add clear");
-    // });
   }
   // Работаем с документами
   if (ctx.message.document) {
@@ -79,6 +68,23 @@ bot.on("message", async (ctx) => {
       ctx.telegram.sendDocument(userId, ctx.message.document.file_id);
     });
   }
+});
+
+bot.on("callback_query", async (ctx) => {
+  const data = ctx.update.callback_query.data;
+  const chatId = ctx.from.id;
+  await bot.telegram.sendMessage(
+    chatId,
+    `Лекция под номером [${data}] выбрана`
+  );
+
+  await axios.get("http://95.163.234.208:3500/userId").then((res) => {
+    usersId = res.data[0].usersId;
+    usersId.push(chatId + `, ${data}`);
+  });
+  uniqueIds.add(chatId);
+  console.log(usersId);
+  axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
 });
 bot.launch();
 

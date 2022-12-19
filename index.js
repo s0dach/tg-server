@@ -80,7 +80,7 @@ bot.on("callback_query", async (ctx) => {
 
   await axios.get("http://95.163.234.208:3500/userId").then((res) => {
     usersId = res.data[0].usersId;
-    usersId.push(chatId + `, ${data}`);
+    usersId.push(chatId + `,${data}`);
   });
   uniqueIds.add(chatId);
   console.log(usersId);

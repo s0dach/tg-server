@@ -14,27 +14,34 @@ bot.on("message", async (ctx) => {
 
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
+    bot.telegram.sendMessage(chatId, "Выберите лекцию из списка.");
     await axios.get("http://95.163.234.208:3500/lists").then((res) => {
       res.data.forEach((data) => {
+        console.log(data);
         lectionName.push(data.name);
+        let inlineMessageRatingKeyboard = [];
+        let uniqueNameLection = new Set(lectionName);
+
+        let i = 1;
+        uniqueNameLection.forEach((name) => {
+          inlineMessageRatingKeyboard.push([
+            { text: name + ` [${data.id}]`, callback_data: data.id },
+          ]);
+          i++;
+        });
+        bot.telegram.sendMessage(chatId, `Лекция "${data.name}"`, {
+          reply_markup: JSON.stringify({
+            inline_keyboard: inlineMessageRatingKeyboard,
+          }),
+        });
+        lectionName.length = 0;
+        inlineMessageRatingKeyboard.length = 0;
+        uniqueNameLection.clear();
       });
     });
-    let inlineMessageRatingKeyboard = [];
-    let uniqueNameLection = new Set(lectionName);
 
-    let i = 1;
-    uniqueNameLection.forEach((name) => {
-      inlineMessageRatingKeyboard.push([
-        { text: name + ` [${i}]`, callback_data: i },
-      ]);
-      i++;
-    });
-
-    bot.telegram.sendMessage(chatId, "Вы вошли в сессию, выберите лекцию.", {
-      reply_markup: JSON.stringify({
-        inline_keyboard: inlineMessageRatingKeyboard,
-      }),
-    });
+    // console.log(inlineMessageRatingKeyboard);
+    // inlineMessageRatingKeyboard.length = 0;
   }
 
   // Выход с лекции

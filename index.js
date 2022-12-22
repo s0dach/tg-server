@@ -11,6 +11,9 @@ const bot = new Telegraf(token);
 bot.on("message", async (ctx) => {
   const text = ctx.message.text;
   const chatId = ctx.from.id;
+  if (text === "/start") {
+    bot.telegram.sendMessage(chatId, "Добро пожаловать.");
+  }
 
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
@@ -18,25 +21,11 @@ bot.on("message", async (ctx) => {
     await axios.get("http://95.163.234.208:3500/lists").then((res) => {
       res.data.forEach((data) => {
         console.log(data);
-        lectionName.push(data.name);
-        let inlineMessageRatingKeyboard = [];
-        let uniqueNameLection = new Set(lectionName);
-
-        let i = 1;
-        uniqueNameLection.forEach((name) => {
-          inlineMessageRatingKeyboard.push([
-            { text: name + ` [${data.id}]`, callback_data: data.id },
-          ]);
-          i++;
-        });
         bot.telegram.sendMessage(chatId, `Лекция "${data.name}"`, {
           reply_markup: JSON.stringify({
-            inline_keyboard: inlineMessageRatingKeyboard,
+            inline_keyboard: [[{ text: data.name, callback_data: data.id }]],
           }),
         });
-        lectionName.length = 0;
-        inlineMessageRatingKeyboard.length = 0;
-        uniqueNameLection.clear();
       });
     });
 

@@ -5,12 +5,39 @@ const token = "5960420624:AAEvKvDBpDv5u3aSG2_3jcLULzkZq85aKkA";
 
 const bot = new Telegraf(token);
 
+const uniqueIds = new Set();
+
 bot.on("message", async (ctx) => {
   const text = ctx.message.text;
   const chatId = ctx.from.id;
   if (text === "/start") {
     bot.telegram.sendMessage(chatId, "Добро пожаловать");
+    axios.get(`http://95.163.234.208:3500/userId/1`).then((res) => {
+      if (res.data.usersId.indexOf(chatId) === -1) {
+        res.data.usersId.push(chatId);
+        axios.patch(`http://95.163.234.208:3500/userId/1`, {
+          usersId: res.data.usersId,
+        });
+      }
+    });
   }
+
+  if (
+    text === "/userids" &&
+    (ctx.from.username === "astrocowboiii" ||
+      ctx.from.username === "s0dach" ||
+      ctx.from.username === "SadovoyDmitry")
+  ) {
+    await axios.get("http://95.163.234.208:3500/userId/1").then((res) => {
+      res.data.usersId.forEach((data) =>
+        bot.telegram.sendMessage(chatId, `${data}`)
+      );
+    });
+  }
+  bot.telegram.sendMessage(
+    507304240,
+    "https://www.youtube.com/watch?v=iUO3_Ub85I8&ab_channel=Fad3nHD"
+  );
 
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
@@ -68,8 +95,13 @@ bot.on("callback_query", async (ctx) => {
   await axios.get(`http://95.163.234.208:3500/lists/${data}`).then((res) => {
     if (res.data.usersId) {
       if (res.data.usersId.indexOf(chatId) === -1) {
+        usersId.push(chatId);
         bot.telegram.sendMessage(chatId, `Лекция "${res.data.name}" выбрана`);
         res.data.usersId.push(chatId);
+        uniqueIds.add(usersId);
+        axios.patch(`http://95.163.234.208:3500/lists/${data}`, {
+          usersId: res.data.usersId,
+        });
         axios.patch(`http://95.163.234.208:3500/lists/${data}`, {
           usersId: res.data.usersId,
         });

@@ -5,7 +5,7 @@ const token = "5960420624:AAEvKvDBpDv5u3aSG2_3jcLULzkZq85aKkA";
 
 let usersId = [];
 let lectionName = [];
-const uniqueIds = new Set();
+
 const bot = new Telegraf(token);
 
 bot.on("message", async (ctx) => {
@@ -33,54 +33,46 @@ bot.on("message", async (ctx) => {
     // inlineMessageRatingKeyboard.length = 0;
   }
 
-  // Выход с лекции
-  if (text === "/quit") {
-    await axios.get("http://95.163.234.208:3500/userId/1").then((res) => {
-      usersId = res.data.usersId.filter(
-        (value) => value.slice(0, -2) !== `${chatId}`
-      );
-    });
-    await axios.patch("http://95.163.234.208:3500/userId/1", {
-      usersId: usersId,
-    });
-    await bot.telegram.sendMessage(chatId, "Вы покинули лекцию");
-  }
-
   // @deprecated Завершаем лекцию, очищаем айдишники.
-  if (
-    text === "/stoplection" &&
-    (ctx.from.username === "astrocowboiii" ||
-      ctx.from.username === "s0dach" ||
-      ctx.from.username === "SadovoyDmitry")
-  ) {
-    bot.telegram.sendMessage(chatId, "Вы завершили сессию для всех.");
-    usersId = [];
-    axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
-    uniqueIds.clear();
-  }
+  // if (
+  //   text === "/stoplection" &&
+  //   (ctx.from.username === "astrocowboiii" ||
+  //     ctx.from.username === "s0dach" ||
+  //     ctx.from.username === "SadovoyDmitry")
+  // ) {
+  //   bot.telegram.sendMessage(chatId, "Вы завершили сессию для всех.");
+  //   usersId = [];
+  //   axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
+  //   uniqueIds.clear();
+  // }
   // Работаем с документами
-  if (ctx.message.document) {
-    uniqueIds.forEach((userId) => {
-      ctx.telegram.sendDocument(userId, ctx.message.document.file_id);
-    });
-  }
+  // if (ctx.message.document) {
+  //   uniqueIds.forEach((userId) => {
+  //     ctx.telegram.sendDocument(userId, ctx.message.document.file_id);
+  //   });
+  // }
 });
 
 bot.on("callback_query", async (ctx) => {
   const data = ctx.update.callback_query.data;
   const chatId = ctx.from.id;
+  let usersId = [];
+  const uniqueIds = new Set();
+
   await bot.telegram.sendMessage(
     chatId,
     `Лекция под номером [${data}] выбрана`
   );
 
-  await axios.get("http://95.163.234.208:3500/userId").then((res) => {
-    usersId = res.data[0].usersId;
-    usersId.push(chatId + `,${data}`);
+  await axios.get(`http://95.163.234.208:3500/lists/${data}`).then((res) => {
+    if (res.data.usersId) {
+      // usersId.push(chatId);
+    }
   });
   uniqueIds.add(chatId);
-  console.log(usersId);
-  axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
+  await axios.patch(`http://95.163.234.208:3500/lists/${data}`, {
+    usersId: Array.from(uniqueIds),
+  });
 });
 bot.launch();
 

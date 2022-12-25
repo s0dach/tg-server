@@ -3,24 +3,20 @@ const axios = require("axios");
 
 const token = "5960420624:AAEvKvDBpDv5u3aSG2_3jcLULzkZq85aKkA";
 
-let usersId = [];
-let lectionName = [];
-
 const bot = new Telegraf(token);
 
 bot.on("message", async (ctx) => {
   const text = ctx.message.text;
   const chatId = ctx.from.id;
   if (text === "/start") {
-    bot.telegram.sendMessage(chatId, "Добро пожаловать.");
+    bot.telegram.sendMessage(chatId, "Добро пожаловать");
   }
 
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
-    bot.telegram.sendMessage(chatId, "Выберите лекцию из списка.");
+    bot.telegram.sendMessage(chatId, "Выберите лекцию из списка");
     await axios.get("http://95.163.234.208:3500/lists").then((res) => {
       res.data.forEach((data) => {
-        console.log(data);
         bot.telegram.sendMessage(chatId, `Лекция "${data.name}"`, {
           reply_markup: JSON.stringify({
             inline_keyboard: [[{ text: data.name, callback_data: data.id }]],
@@ -28,9 +24,19 @@ bot.on("message", async (ctx) => {
         });
       });
     });
+  }
 
-    // console.log(inlineMessageRatingKeyboard);
-    // inlineMessageRatingKeyboard.length = 0;
+  if (text === "/quit") {
+    await axios.get("http://95.163.234.208:3500/lists").then((res) => {
+      bot.telegram.sendMessage(chatId, "Вы покинули лекцию");
+      res.data.forEach((data) => {
+        if (data.usersId) {
+          axios.patch(`http://95.163.234.208:3500/lists/${data.id}`, {
+            usersId: data.usersId.filter((name) => name !== chatId),
+          });
+        }
+      });
+    });
   }
 
   // @deprecated Завершаем лекцию, очищаем айдишники.
@@ -59,19 +65,21 @@ bot.on("callback_query", async (ctx) => {
   let usersId = [];
   const uniqueIds = new Set();
 
-  await bot.telegram.sendMessage(
-    chatId,
-    `Лекция под номером [${data}] выбрана`
-  );
-
   await axios.get(`http://95.163.234.208:3500/lists/${data}`).then((res) => {
     if (res.data.usersId) {
-      // usersId.push(chatId);
+      if (res.data.usersId.indexOf(chatId) === -1) {
+        bot.telegram.sendMessage(chatId, `Лекция "${res.data.name}" выбрана`);
+        res.data.usersId.push(chatId);
+        axios.patch(`http://95.163.234.208:3500/lists/${data}`, {
+          usersId: res.data.usersId,
+        });
+      } else {
+        bot.telegram.sendMessage(
+          chatId,
+          `Вы уже находитесь в лекции "${res.data.name}"`
+        );
+      }
     }
-  });
-  uniqueIds.add(chatId);
-  await axios.patch(`http://95.163.234.208:3500/lists/${data}`, {
-    usersId: Array.from(uniqueIds),
   });
 });
 bot.launch();

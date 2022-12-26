@@ -34,10 +34,6 @@ bot.on("message", async (ctx) => {
       );
     });
   }
-  bot.telegram.sendMessage(
-    507304240,
-    "https://www.youtube.com/watch?v=iUO3_Ub85I8&ab_channel=Fad3nHD"
-  );
 
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {

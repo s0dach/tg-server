@@ -11,7 +11,10 @@ bot.on("message", async (ctx) => {
   const text = ctx.message.text;
   const chatId = ctx.from.id;
   if (text === "/start") {
-    bot.telegram.sendMessage(chatId, "Добро пожаловать");
+    bot.telegram.sendMessage(
+      chatId,
+      "Добро пожаловать. Выберите раздел 'Инструкция по использованию бота' в меню, чтобы узнать подробности."
+    );
     axios.get(`http://95.163.234.208:3500/userId/1`).then((res) => {
       if (res.data.usersId.indexOf(chatId) === -1) {
         res.data.usersId.push(chatId);
@@ -32,6 +35,13 @@ bot.on("message", async (ctx) => {
       res.data.usersId.forEach((data) =>
         bot.telegram.sendMessage(chatId, `${data}`)
       );
+    });
+  }
+
+  if (text === "/faq") {
+    bot.telegram.sendMessage(chatId, {
+      text: "*Инструкция к боту*.\n\nНажмите на кнопку *Войти в сессию* в левом нижнем меню, либо введите команду `/startlection`, чтобы выбрать лекцию\n\nДля выхода с лекции используйте команду `/quit`, либо нажмите на кнопку *Покинуть сессию* для того чтобы материалы с лекции не приходили.",
+      parse_mode: "Markdown",
     });
   }
 

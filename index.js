@@ -47,17 +47,19 @@ bot.on("message", async (ctx) => {
 
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
-    bot.telegram.sendMessage(chatId, "Выберите лекцию из списка");
     await axios.get("http://95.163.234.208:3500/lists").then(async (res) => {
-      let data = res.data;
-      await data.shift();
-      await data.forEach(async (data) => {
-        await bot.telegram.sendMessage(chatId, `Лекция "${data.name}"`, {
-          reply_markup: JSON.stringify({
-            inline_keyboard: [[{ text: data.name, callback_data: data.id }]],
-          }),
-        });
+      let inlineKeyboard = [];
+      res.data.shift();
+      res.data.map((data) => {
+        inlineKeyboard.push([{ text: data.name, callback_data: data.id }]);
       });
+      await bot.telegram.sendMessage(chatId, "Выберите лекцию из списка", {
+        reply_markup: JSON.stringify({
+          inline_keyboard: inlineKeyboard,
+        }),
+      });
+      console.log(inlineKeyboard);
+      inlineKeyboard.length = 0;
     });
   }
 

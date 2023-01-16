@@ -49,7 +49,6 @@ bot.on("message", async (ctx) => {
   if (text === "/startlection") {
     await axios.get("http://95.163.234.208:3500/lists").then(async (res) => {
       let inlineKeyboard = [];
-      res.data.shift();
       res.data.map((data) => {
         inlineKeyboard.push([{ text: data.name, callback_data: data.id }]);
       });

@@ -57,7 +57,6 @@ bot.on("message", async (ctx) => {
           inline_keyboard: inlineKeyboard,
         }),
       });
-      console.log(inlineKeyboard);
       inlineKeyboard.length = 0;
     });
   }
@@ -95,12 +94,36 @@ bot.on("message", async (ctx) => {
   // }
 });
 
+bot.on("poll_answer", async (ctx) => {
+  let array = [];
+  axios.get("http://95.163.234.208:3500/tasks").then(({ data }) =>
+    data.forEach((task) => {
+      if (task.pollId?.includes(ctx.pollAnswer.poll_id)) {
+        // axios.patch(`http://95.163.234.208:3500/tasks/${task.id}`, {
+        //   optionsReply: array,
+        // });
+        axios.get(`http://95.163.234.208:3500/tasks/${task.id}`).then((res) => {
+          if (res.data.optionsReply.length !== 0) {
+            res.data.optionsReply.push(ctx.pollAnswer.option_ids[0]);
+            axios.patch(`http://95.163.234.208:3500/tasks/${task.id}`, {
+              optionsReply: res.data.optionsReply,
+            });
+          } else {
+            axios.patch(`http://95.163.234.208:3500/tasks/${task.id}`, {
+              optionsReply: [ctx.pollAnswer.option_ids[0]],
+            });
+          }
+        });
+      }
+    })
+  );
+});
+
 bot.on("callback_query", async (ctx) => {
   const data = ctx.update.callback_query.data;
   const chatId = ctx.from.id;
   let usersId = [];
   const uniqueIds = new Set();
-
   await axios.get(`http://95.163.234.208:3500/lists/${data}`).then((res) => {
     if (res.data.usersId) {
       if (res.data.usersId.indexOf(chatId) === -1) {

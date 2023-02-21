@@ -47,51 +47,38 @@ bot.on("message", async (ctx) => {
 
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
-    await axios.get("http://95.163.234.208:3500/lists").then(async (res) => {
-      let inlineKeyboard = [];
-      res.data.map((data) => {
-        inlineKeyboard.push([{ text: data.name, callback_data: data.id }]);
+    await axios
+      .get("http://127.0.0.1:7000/api/list/getlist")
+      .then(async (res) => {
+        let inlineKeyboard = [];
+        res.data.map((data) => {
+          inlineKeyboard.push([{ text: data.name, callback_data: data._id }]);
+        });
+        await bot.telegram.sendMessage(chatId, "Выберите лекцию из списка", {
+          reply_markup: JSON.stringify({
+            inline_keyboard: inlineKeyboard,
+          }),
+        });
+        inlineKeyboard.length = 0;
       });
-      await bot.telegram.sendMessage(chatId, "Выберите лекцию из списка", {
-        reply_markup: JSON.stringify({
-          inline_keyboard: inlineKeyboard,
-        }),
-      });
-      inlineKeyboard.length = 0;
-    });
   }
 
   if (text === "/quit") {
-    await axios.get("http://95.163.234.208:3500/lists").then((res) => {
+    await axios.get("http://127.0.0.1:7000/api/list/getlist").then((res) => {
       bot.telegram.sendMessage(chatId, "Вы покинули лекцию");
       res.data.forEach((data) => {
         if (data.usersId) {
-          axios.patch(`http://95.163.234.208:3500/lists/${data.id}`, {
-            usersId: data.usersId.filter((name) => name !== chatId),
-          });
+          axios.patch(
+            `http://127.0.0.1:7000/api/list/updatelistusers/${data._id}`,
+            {
+              usersId: data.usersId.filter((name) => name !== chatId),
+              id: data._id,
+            }
+          );
         }
       });
     });
   }
-
-  // @deprecated Завершаем лекцию, очищаем айдишники.
-  // if (
-  //   text === "/stoplection" &&
-  //   (ctx.from.username === "astrocowboiii" ||
-  //     ctx.from.username === "s0dach" ||
-  //     ctx.from.username === "SadovoyDmitry")
-  // ) {
-  //   bot.telegram.sendMessage(chatId, "Вы завершили сессию для всех.");
-  //   usersId = [];
-  //   axios.patch("http://95.163.234.208:3500/userId/1", { usersId: usersId });
-  //   uniqueIds.clear();
-  // }
-  // Работаем с документами
-  // if (ctx.message.document) {
-  //   uniqueIds.forEach((userId) => {
-  //     ctx.telegram.sendDocument(userId, ctx.message.document.file_id);
-  //   });
-  // }
 });
 
 bot.on("poll_answer", async (ctx) => {
@@ -99,9 +86,6 @@ bot.on("poll_answer", async (ctx) => {
   axios.get("http://95.163.234.208:3500/tasks").then(({ data }) =>
     data.forEach((task) => {
       if (task.pollId?.includes(ctx.pollAnswer.poll_id)) {
-        // axios.patch(`http://95.163.234.208:3500/tasks/${task.id}`, {
-        //   optionsReply: array,
-        // });
         axios.get(`http://95.163.234.208:3500/tasks/${task.id}`).then((res) => {
           if (res.data.optionsReply.length !== 0) {
             res.data.optionsReply.push(ctx.pollAnswer.option_ids[0]);
@@ -124,18 +108,18 @@ bot.on("callback_query", async (ctx) => {
   const chatId = ctx.from.id;
   let usersId = [];
   const uniqueIds = new Set();
-  await axios.get(`http://95.163.234.208:3500/lists/${data}`).then((res) => {
-    if (res.data.usersId) {
+  await axios
+    .get(`http://127.0.0.1:7000/api/list/getlist/${data}`)
+    .then((res) => {
+      console.log(res);
       if (res.data.usersId.indexOf(chatId) === -1) {
         usersId.push(chatId);
         bot.telegram.sendMessage(chatId, `Лекция "${res.data.name}" выбрана`);
         res.data.usersId.push(chatId);
         uniqueIds.add(usersId);
-        axios.patch(`http://95.163.234.208:3500/lists/${data}`, {
+        axios.patch(`http://127.0.0.1:7000/api/list/updatelistusers/${data}`, {
           usersId: res.data.usersId,
-        });
-        axios.patch(`http://95.163.234.208:3500/lists/${data}`, {
-          usersId: res.data.usersId,
+          id: data,
         });
       } else {
         bot.telegram.sendMessage(
@@ -143,8 +127,7 @@ bot.on("callback_query", async (ctx) => {
           `Вы уже находитесь в лекции "${res.data.name}"`
         );
       }
-    }
-  });
+    });
 });
 bot.launch();
 

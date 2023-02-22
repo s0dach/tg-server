@@ -48,7 +48,7 @@ bot.on("message", async (ctx) => {
   // Добавляем айдишники пользователей для рассылки
   if (text === "/startlection") {
     await axios
-      .get("http://127.0.0.1:7000/api/list/getlist")
+      .get("http://95.163.234.208:7000/api/list/getlist")
       .then(async (res) => {
         let inlineKeyboard = [];
         res.data.map((data) => {
@@ -64,20 +64,22 @@ bot.on("message", async (ctx) => {
   }
 
   if (text === "/quit") {
-    await axios.get("http://127.0.0.1:7000/api/list/getlist").then((res) => {
-      bot.telegram.sendMessage(chatId, "Вы покинули лекцию");
-      res.data.forEach((data) => {
-        if (data.usersId) {
-          axios.patch(
-            `http://127.0.0.1:7000/api/list/updatelistusers/${data._id}`,
-            {
-              usersId: data.usersId.filter((name) => name !== chatId),
-              id: data._id,
-            }
-          );
-        }
+    await axios
+      .get("http://95.163.234.208:7000/api/list/getlist")
+      .then((res) => {
+        bot.telegram.sendMessage(chatId, "Вы покинули лекцию");
+        res.data.forEach((data) => {
+          if (data.usersId) {
+            axios.patch(
+              `http://127.0.0.1:7000/api/list/updatelistusers/${data._id}`,
+              {
+                usersId: data.usersId.filter((name) => name !== chatId),
+                id: data._id,
+              }
+            );
+          }
+        });
       });
-    });
   }
 });
 
@@ -109,7 +111,7 @@ bot.on("callback_query", async (ctx) => {
   let usersId = [];
   const uniqueIds = new Set();
   await axios
-    .get(`http://127.0.0.1:7000/api/list/getlist/${data}`)
+    .get(`http://95.163.234.208:7000/api/list/getlist/${data}`)
     .then(async (res) => {
       console.log(res);
       if (res.data.usersId.indexOf(chatId) === -1) {
@@ -120,15 +122,9 @@ bot.on("callback_query", async (ctx) => {
         );
         await res.data.usersId.push(chatId);
         uniqueIds.add(usersId);
+        console.log(res.data);
         await axios.patch(
-          `http://127.0.0.1:7000/api/list/updatelistusers/${data}`,
-          {
-            usersId: res.data.usersId,
-            id: data,
-          }
-        );
-        await axios.patch(
-          `http://127.0.0.1:7000/api/list/updatelistusers/${data}`,
+          `http://95.163.234.208:7000/api/list/updatelistusers/${data}`,
           {
             usersId: res.data.usersId,
             id: data,

@@ -110,17 +110,30 @@ bot.on("callback_query", async (ctx) => {
   const uniqueIds = new Set();
   await axios
     .get(`http://127.0.0.1:7000/api/list/getlist/${data}`)
-    .then((res) => {
+    .then(async (res) => {
       console.log(res);
       if (res.data.usersId.indexOf(chatId) === -1) {
         usersId.push(chatId);
-        bot.telegram.sendMessage(chatId, `Лекция "${res.data.name}" выбрана`);
-        res.data.usersId.push(chatId);
+        await bot.telegram.sendMessage(
+          chatId,
+          `Лекция "${res.data.name}" выбрана`
+        );
+        await res.data.usersId.push(chatId);
         uniqueIds.add(usersId);
-        axios.patch(`http://127.0.0.1:7000/api/list/updatelistusers/${data}`, {
-          usersId: res.data.usersId,
-          id: data,
-        });
+        await axios.patch(
+          `http://127.0.0.1:7000/api/list/updatelistusers/${data}`,
+          {
+            usersId: res.data.usersId,
+            id: data,
+          }
+        );
+        await axios.patch(
+          `http://127.0.0.1:7000/api/list/updatelistusers/${data}`,
+          {
+            usersId: res.data.usersId,
+            id: data,
+          }
+        );
       } else {
         bot.telegram.sendMessage(
           chatId,

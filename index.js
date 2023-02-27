@@ -15,28 +15,28 @@ bot.on("message", async (ctx) => {
       chatId,
       "Добро пожаловать. Выберите раздел 'Инструкция по использованию бота' в меню, чтобы узнать подробности."
     );
-    axios.get(`http://95.163.234.208:3500/userId/1`).then((res) => {
-      if (res.data.usersId.indexOf(chatId) === -1) {
-        res.data.usersId.push(chatId);
-        axios.patch(`http://95.163.234.208:3500/userId/1`, {
-          usersId: res.data.usersId,
-        });
-      }
-    });
+    // axios.get(`http://95.163.234.208:3500/userId/1`).then((res) => {
+    //   if (res.data.usersId.indexOf(chatId) === -1) {
+    //     res.data.usersId.push(chatId);
+    //     axios.patch(`http://95.163.234.208:3500/userId/1`, {
+    //       usersId: res.data.usersId,
+    //     });
+    //   }
+    // });
   }
 
-  if (
-    text === "/userids" &&
-    (ctx.from.username === "astrocowboiii" ||
-      ctx.from.username === "s0dach" ||
-      ctx.from.username === "SadovoyDmitry")
-  ) {
-    await axios.get("http://95.163.234.208:3500/userId/1").then((res) => {
-      res.data.usersId.forEach((data) =>
-        bot.telegram.sendMessage(chatId, `${data}`)
-      );
-    });
-  }
+  // if (
+  //   text === "/userids" &&
+  //   (ctx.from.username === "astrocowboiii" ||
+  //     ctx.from.username === "s0dach" ||
+  //     ctx.from.username === "SadovoyDmitry")
+  // ) {
+  //   await axios.get("http://95.163.234.208:3500/userId/1").then((res) => {
+  //     res.data.usersId.forEach((data) =>
+  //       bot.telegram.sendMessage(chatId, `${data}`)
+  //     );
+  //   });
+  // }
 
   if (text === "/faq") {
     bot.telegram.sendMessage(chatId, {
@@ -50,7 +50,6 @@ bot.on("message", async (ctx) => {
     await axios
       .get("http://95.163.234.208:7000/api/list/getlist")
       .then(async (res) => {
-        console.log(res);
         let inlineKeyboard = [];
         res.data.map((data) => {
           inlineKeyboard.push([{ text: data.name, callback_data: data._id }]);
@@ -86,24 +85,34 @@ bot.on("message", async (ctx) => {
 
 bot.on("poll_answer", async (ctx) => {
   let array = [];
-  axios.get("http://95.163.234.208:3500/tasks").then(({ data }) =>
-    data.forEach((task) => {
-      if (task.pollId?.includes(ctx.pollAnswer.poll_id)) {
-        axios.get(`http://95.163.234.208:3500/tasks/${task.id}`).then((res) => {
-          if (res.data.optionsReply.length !== 0) {
-            res.data.optionsReply.push(ctx.pollAnswer.option_ids[0]);
-            axios.patch(`http://95.163.234.208:3500/tasks/${task.id}`, {
-              optionsReply: res.data.optionsReply,
-            });
-          } else {
-            axios.patch(`http://95.163.234.208:3500/tasks/${task.id}`, {
-              optionsReply: [ctx.pollAnswer.option_ids[0]],
-            });
+  axios
+    .get("http://95.163.234.208:7000/api/lection/getmaterials")
+    .then((res) => {
+      {
+        res.data.forEach((task) => {
+          if (task.pollId?.includes(ctx.pollAnswer.poll_id)) {
+            if (task.optionsReply.length !== 0) {
+              task.optionsReply.push(ctx.pollAnswer.option_ids[0]);
+              axios.patch(
+                "http://95.163.234.208:7000/api/lection/updatematerial",
+                {
+                  ...task,
+                  optionsReply: task.optionsReply,
+                }
+              );
+            } else {
+              axios.patch(
+                "http://95.163.234.208:7000/api/lection/updatematerial",
+                {
+                  ...task,
+                  optionsReply: [ctx.pollAnswer.option_ids[0]],
+                }
+              );
+            }
           }
         });
       }
-    })
-  );
+    });
 });
 
 bot.on("callback_query", async (ctx) => {
@@ -122,7 +131,6 @@ bot.on("callback_query", async (ctx) => {
         );
         await res.data.usersId.push(chatId);
         uniqueIds.add(usersId);
-        console.log(res.data);
         await axios.patch(
           `http://95.163.234.208:7000/api/list/updatelistusers/${data}`,
           {

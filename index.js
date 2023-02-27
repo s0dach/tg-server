@@ -50,6 +50,7 @@ bot.on("message", async (ctx) => {
     await axios
       .get("http://95.163.234.208:7000/api/list/getlist")
       .then(async (res) => {
+        console.log(res);
         let inlineKeyboard = [];
         res.data.map((data) => {
           inlineKeyboard.push([{ text: data.name, callback_data: data._id }]);
@@ -71,7 +72,7 @@ bot.on("message", async (ctx) => {
         res.data.forEach((data) => {
           if (data.usersId) {
             axios.patch(
-              `http://127.0.0.1:7000/api/list/updatelistusers/${data._id}`,
+              `http://95.163.234.208:7000/api/list/updatelistusers/${data._id}`,
               {
                 usersId: data.usersId.filter((name) => name !== chatId),
                 id: data._id,
@@ -113,7 +114,6 @@ bot.on("callback_query", async (ctx) => {
   await axios
     .get(`http://95.163.234.208:7000/api/list/getlist/${data}`)
     .then(async (res) => {
-      console.log(res);
       if (res.data.usersId.indexOf(chatId) === -1) {
         usersId.push(chatId);
         await bot.telegram.sendMessage(
